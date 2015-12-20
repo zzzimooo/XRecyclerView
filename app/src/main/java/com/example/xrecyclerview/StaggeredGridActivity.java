@@ -4,12 +4,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.jcodecraeer.xrecyclerview.ProgressStyle;
 import com.jcodecraeer.xrecyclerview.XRecyclerView;
@@ -65,7 +67,7 @@ public class StaggeredGridActivity extends AppCompatActivity {
                         public void run() {
                             mRecyclerView.loadMoreComplete();
                             for(int i = 0; i < 25 ;i++){
-                                listData.add("item" + (i + listData.size()) );
+                                listData.add("item" + i );
                             }
                             mAdapter.notifyDataSetChanged();
                             mRecyclerView.refreshComplete();
@@ -86,11 +88,17 @@ public class StaggeredGridActivity extends AppCompatActivity {
 
         listData = new  ArrayList<String>();
         for(int i = 0; i < 25 ;i++){
-            listData.add("item" + (i + listData.size()) );
+            listData.add("item" + i );
         }
         mAdapter = new MyAdapter(listData);
 
         mRecyclerView.setAdapter(mAdapter);
+        mRecyclerView.setOnItemClickListener(new XRecyclerView.OnItemClickListener() {
+            @Override
+            public void onItemClick(ViewGroup parent, RecyclerView.ViewHolder viewHolder, View view, int position) {
+                Toast.makeText(getApplicationContext(), "item click " + position, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override

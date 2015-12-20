@@ -1,8 +1,9 @@
-package com.example.xrecyclerview;
+package cu;
 
 import android.app.Activity;
 import android.os.Handler;
 
+import com.example.xrecyclerview.BuildConfig;
 import com.squareup.okhttp.Cache;
 import com.squareup.okhttp.CacheControl;
 import com.squareup.okhttp.Call;
@@ -28,8 +29,6 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.concurrent.TimeUnit;
 
-import cu.DeviceUtil;
-import cu.Preferences;
 import cu.db.config.ConfigUtil;
 
 /**
@@ -61,7 +60,7 @@ public class httphelper {
     private httphelper(Activity activity) {
         this.activity = activity;
         this.mDeviceUtil = new DeviceUtil(activity);
-        mOkHttpClient = new OkHttpClient();
+        getOkHttpClient();
         //cookie enabled
         mOkHttpClient.setCookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER));
         hd = new Handler(activity.getMainLooper());
@@ -87,6 +86,22 @@ public class httphelper {
         return httphelperInstance;
     }
 
+    private void getOkHttpClient(){
+        mOkHttpClient = new OkHttpClient();
+        mOkHttpClient.setConnectTimeout(15, TimeUnit.SECONDS);
+        //cookie enabled
+        mOkHttpClient.setCookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER));
+    }
+
+    private Request.Builder getDefRequestBuilder() {
+        return new Request.Builder()
+                .addHeader("appkey ", ConfigUtil.getConfigValue(Preferences.KEYS))
+                .addHeader("Content-Type", "application/json") // application/json         contentType
+                .addHeader("apptype", "hrloo_app20")
+                .addHeader("versionname", SupportUtility.getAppVersionName(activity))
+                .addHeader("versioncode", SupportUtility.getAppVersionCode(activity) + "");
+    }
+
     private String getUrlEnd() {
         // token,devid这二个参数以GET方式放在每次请求的URL后面，登录成功后服务器返回token,未登录时token可为空值,devid设备ID要求唯一由APP产生
         return "&m=mapi2&token=" + encode(ConfigUtil.getConfigValue(Preferences.TOKEN)) + "&devid=" + mDeviceUtil.getAndroidId();
@@ -94,6 +109,13 @@ public class httphelper {
 
     public String requestUrl(String module, String method) {
         return BASE_URL + "c=" + module + "&a=" + method + getUrlEnd();
+    }
+
+    public void get(String url, Callback response) {
+        mOkHttpClient.newCall(getDefRequestBuilder()
+                .url(url)
+                .build())
+                .enqueue(response);
     }
 
 

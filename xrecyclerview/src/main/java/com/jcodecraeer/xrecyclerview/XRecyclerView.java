@@ -25,7 +25,7 @@ public class XRecyclerView extends RecyclerView {
     private Adapter mAdapter;
     private Adapter mWrapAdapter;
     private float mLastY = -1;
-    private static final float DRAG_RATE = 3;
+    private static final float DRAG_RATE = 1.6f; // 下拉阻碍系数
     private LoadingListener mLoadingListener;
     private ArrowRefreshHeader mRefreshHeader;
     private boolean pullRefreshEnabled = true;
@@ -36,6 +36,8 @@ public class XRecyclerView extends RecyclerView {
     private static final int TYPE_FOOTER =  -3;
     private int previousTotal = 0;
     private int mPageCount = 0;
+
+    private OnItemClickListener mOnItemClickListener;
 
     public XRecyclerView(Context context) {
         this(context, null);
@@ -275,7 +277,7 @@ public class XRecyclerView extends RecyclerView {
 //        return false;
     }
 
-    private final RecyclerView.AdapterDataObserver mDataObserver = new RecyclerView.AdapterDataObserver() {
+    private final AdapterDataObserver mDataObserver = new AdapterDataObserver() {
         @Override
         public void onChanged() {
             mWrapAdapter.notifyDataSetChanged();
@@ -307,9 +309,9 @@ public class XRecyclerView extends RecyclerView {
         }
     };
 
-    private class WrapAdapter extends RecyclerView.Adapter<ViewHolder> {
+    private class WrapAdapter extends Adapter<ViewHolder> {
 
-        private RecyclerView.Adapter adapter;
+        private Adapter adapter;
 
         private ArrayList<View> mHeaderViews;
 
@@ -317,7 +319,7 @@ public class XRecyclerView extends RecyclerView {
 
         private int headerPosition = 1;
 
-        public WrapAdapter(ArrayList<View> headerViews, ArrayList<View> footViews, RecyclerView.Adapter adapter) {
+        public WrapAdapter(ArrayList<View> headerViews, ArrayList<View> footViews, Adapter adapter) {
             this.adapter = adapter;
                 this.mHeaderViews = headerViews;
                 this.mFootViews = footViews;
@@ -326,7 +328,7 @@ public class XRecyclerView extends RecyclerView {
         @Override
         public void onAttachedToRecyclerView(RecyclerView recyclerView) {
             super.onAttachedToRecyclerView(recyclerView);
-            RecyclerView.LayoutManager manager = recyclerView.getLayoutManager();
+            LayoutManager manager = recyclerView.getLayoutManager();
             if(manager instanceof GridLayoutManager) {
                 final GridLayoutManager gridManager = ((GridLayoutManager) manager);
                 gridManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
@@ -340,7 +342,7 @@ public class XRecyclerView extends RecyclerView {
         }
 
         @Override
-        public void onViewAttachedToWindow(RecyclerView.ViewHolder holder) {
+        public void onViewAttachedToWindow(ViewHolder holder) {
             super.onViewAttachedToWindow(holder);
             ViewGroup.LayoutParams lp = holder.itemView.getLayoutParams();
             if(lp != null
@@ -372,7 +374,7 @@ public class XRecyclerView extends RecyclerView {
         }
 
         @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        public ViewHolder onCreateViewHolder(final ViewGroup parent, int viewType) {
             if (viewType == TYPE_REFRESH_HEADER) {
                 return new SimpleViewHolder(mHeaderViews.get(0));
             } else if (viewType == TYPE_HEADER) {
@@ -380,11 +382,20 @@ public class XRecyclerView extends RecyclerView {
             } else if (viewType == TYPE_FOOTER) {
                 return new SimpleViewHolder(mFootViews.get(0));
             }
-            return adapter.onCreateViewHolder(parent, viewType);
+            final ViewHolder viewHolder = adapter.onCreateViewHolder(parent, viewType);
+            if(mOnItemClickListener!=null) {
+                viewHolder.itemView.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mOnItemClickListener.onItemClick(parent, viewHolder, v, getChildAdapterPosition(v)-mHeaderViews.size());
+                    }
+                });
+            }
+            return viewHolder;
         }
 
         @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+        public void onBindViewHolder(ViewHolder holder, int position) {
             if (isHeader(position)) {
                 return;
             }
@@ -442,11 +453,23 @@ public class XRecyclerView extends RecyclerView {
             return -1;
         }
 
-        private class SimpleViewHolder extends RecyclerView.ViewHolder {
+        private class SimpleViewHolder extends ViewHolder {
             public SimpleViewHolder(View itemView) {
                 super(itemView);
             }
         }
+    }
+
+    public int getHeaderSize(){
+        return mHeaderViews.size();
+    }
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        mOnItemClickListener = listener;
+    }
+
+    public interface OnItemClickListener {
+        void onItemClick(ViewGroup parent, ViewHolder viewHolder, View view, int position);
     }
 
     public void setLoadingListener(LoadingListener listener) {

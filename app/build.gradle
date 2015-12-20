@@ -20,7 +20,10 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:appcompat-v7:23.1.0'
     compile project(':xrecyclerview')
+    compile 'com.squareup.okhttp:okhttp:2.4.0'
+    compile 'com.alibaba:fastjson:1.1.45.android'
+    compile 'de.greenrobot:greendao:2.0.0'
 }

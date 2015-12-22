@@ -1,5 +1,6 @@
 package com.example.xrecyclerview;
 
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -20,16 +21,19 @@ import java.util.ArrayList;
 
 public class StaggeredGridActivity extends AppCompatActivity {
     private XRecyclerView mRecyclerView;
-    private MyAdapter mAdapter;
+    private MyStaggeredAdapter mAdapter;
     private ArrayList<String> listData;
     private int refreshTime = 0;
     private int times = 0;
+
+    private int GRIDSPAN_COUNT = 3;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recyclerview);
         mRecyclerView = (XRecyclerView)this.findViewById(R.id.recyclerview);
-        StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager( 3,
+        StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(GRIDSPAN_COUNT,
                 StaggeredGridLayoutManager.VERTICAL);
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(layoutManager);
@@ -48,11 +52,11 @@ public class StaggeredGridActivity extends AppCompatActivity {
                 times = 0;
                 new Handler().postDelayed(new Runnable(){
                     public void run() {
-
                         listData.clear();
                         for(int i = 0; i < 25 ;i++){
-                            listData.add("item" + i + "after " + refreshTime + " times of refresh");
+                            listData.add("item " + i + " after " + refreshTime + " times of refresh");
                         }
+                        mAdapter.initRandomH();
                         mAdapter.notifyDataSetChanged();
                         mRecyclerView.refreshComplete();
                     }
@@ -67,36 +71,42 @@ public class StaggeredGridActivity extends AppCompatActivity {
                         public void run() {
                             mRecyclerView.loadMoreComplete();
                             for(int i = 0; i < 25 ;i++){
-                                listData.add("item" + i );
+                                listData.add("item " + i);
                             }
-                            mAdapter.notifyDataSetChanged();
+                            mAdapter.addRandomH();
                             mRecyclerView.refreshComplete();
+                            if(times==1) mRecyclerView.loadMoreComplete();
                         }
                     }, 1000);
                 } else {
-                    new Handler().postDelayed(new Runnable() {
-                        public void run() {
-
-                            mAdapter.notifyDataSetChanged();
-                            mRecyclerView.loadMoreComplete();
-                        }
-                    }, 1000);
+//                    new Handler().postDelayed(new Runnable() {
+//                        public void run() {
+//                            mRecyclerView.loadMoreComplete();
+//                        }
+//                    }, 1000);
                 }
                 times ++;
             }
         });
 
-        listData = new  ArrayList<String>();
+        listData = new  ArrayList<>();
         for(int i = 0; i < 25 ;i++){
-            listData.add("item" + i );
+            listData.add("item" + i);
         }
-        mAdapter = new MyAdapter(listData);
+        mAdapter = new MyStaggeredAdapter(mRecyclerView, listData);
 
         mRecyclerView.setAdapter(mAdapter);
         mRecyclerView.setOnItemClickListener(new XRecyclerView.OnItemClickListener() {
             @Override
             public void onItemClick(ViewGroup parent, RecyclerView.ViewHolder viewHolder, View view, int position) {
-                Toast.makeText(getApplicationContext(), "item click " + position, Toast.LENGTH_SHORT).show();
+                int spanIndex = ((StaggeredGridLayoutManager.LayoutParams) viewHolder.itemView.getLayoutParams()).getSpanIndex();
+                Toast.makeText(getApplicationContext(), "root_item " + position + ",spanIndex=" + spanIndex, Toast.LENGTH_SHORT).show();
+            }
+        });
+        mRecyclerView.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override
+            public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+
             }
         });
     }
